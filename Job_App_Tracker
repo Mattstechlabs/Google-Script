@@ -1,0 +1,45 @@
+function sendDailyJobApplicationSummary() {
+  // Keywords to search for in the body of emails
+  var keywords = [
+    'application submitted',
+    'application received',
+    'thank you for applying',
+    'we have received your application',
+    'your submission is complete',
+    'application'
+  ];
+
+  // Get today's date for Gmail search
+  var today = new Date();
+  var yyyy = today.getFullYear();
+  var mm = today.getMonth() + 1; // January = 0
+  var dd = today.getDate();
+  var dateString = yyyy + '/' + mm + '/' + dd;
+
+  // Search all emails received today
+  var threads = GmailApp.search('after:' + dateString);
+
+  var count = 0;
+  var details = [];
+
+  threads.forEach(function(thread) {
+    var messages = thread.getMessages();
+    messages.forEach(function(msg) {
+      var body = msg.getPlainBody().toLowerCase();
+      for (var i = 0; i < keywords.length; i++) {
+        if (body.indexOf(keywords[i]) !== -1) {
+          count++;
+          details.push("From: " + msg.getFrom() + " | Subject: " + msg.getSubject());
+          break; // Count only once per message
+        }
+      }
+    });
+  });
+
+  // Build email content
+  var emailBody = "Job applications detected today: " + count + "\n\n";
+  emailBody += details.join("\n");
+
+  // Send summary to yourself
+  var myEmail = Session.getActiveUser().getEmail();
+  MailApp.sendEmail({
